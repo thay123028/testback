@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: run ssh
-            uses: appleboy/ssh-action@v1
-            with:
-              host: 183.101.189.204
-              username: test
-              password: qwer1234
-              port: 119
-              script:
-                echo test > /tmp/test
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 183.101.189.204
+          username: test
+          password: qwer1234
+          port: 119
+          script:
+            echo test > /tmp/test
