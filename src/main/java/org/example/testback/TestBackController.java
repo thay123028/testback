@@ -11,6 +11,6 @@ public class TestBackController {
 
     @GetMapping
     public ResponseEntity test() {
-        return ResponseEntity.status(200).body("바이..");
+        return ResponseEntity.status(200).body("하이..");
     }
 }
