@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: run ssh
+      - name: SSH and deploy
         uses: appleboy/ssh-action@v1
         with:
           host: 121.140.125.176
@@ -54,10 +54,13 @@ jobs:
           password: qwer1234
           port: 119
           script: |
-            # Docker 이미지 pull
+            # --- Docker Hub 로그인 ---
+            echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+
+            # --- Docker 이미지 pull ---
             docker pull ayoungg/back:latest || true
 
-            # 현재 Nginx 포트 확인
+            # --- Nginx 현재 포트 확인 ---
             CUR_PORT=$(grep -oE '8080|8081' /etc/nginx/sites-enabled/default)
             if [ "$CUR_PORT" = "8080" ]; then
               OLD_PORT=8080
@@ -66,17 +69,16 @@ jobs:
               OLD_PORT=8081
               NEW_PORT=8080
             fi
-
             echo "OLD_PORT=$OLD_PORT"
             echo "NEW_PORT=$NEW_PORT"
 
-            # 새 포트 컨테이너 제거 (이전 실행 중이면 삭제)
+            # --- 새 포트 컨테이너 제거 (기존 실행 중이면 삭제) ---
             docker rm -f back-$NEW_PORT 2>/dev/null || true
 
-            # 새 컨테이너 실행
-            docker run -d --name back-$NEW_PORT -p $NEW_PORT:8080 --pull=always ayoungg/back:latest
+            # --- 새 컨테이너 실행 ---
+            docker run -d --name back-$NEW_PORT -p $NEW_PORT:8080 ayoungg/back:latest
 
-            # Health 체크 (최대 3분 대기)
+            # --- Health 체크 (최대 3분, 5초 간격) ---
             for i in $(seq 1 36); do
               RESP=$(curl -fsS --max-time 5 "http://127.0.0.1:${NEW_PORT}/health" || true)
               echo "Health response: $RESP"
@@ -87,9 +89,9 @@ jobs:
               sleep 5
             done
 
-            # Nginx 설정 교체 후 reload
+            # --- Nginx 포트 교체 & reload ---
             sed -i "s/$OLD_PORT/$NEW_PORT/g" /etc/nginx/sites-enabled/default
             nginx -s reload
 
-            # 이전 컨테이너 제거
+            # --- 이전 컨테이너 제거 ---
             docker rm -f back-$OLD_PORT 2>/dev/null || true
