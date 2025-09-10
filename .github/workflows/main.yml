@@ -42,14 +42,39 @@ jobs:
       - name: run ssh
         uses: appleboy/ssh-action@v1
         with:
-          # 네이버에 내 ip 검색해서 나오는 걸로
           host: 121.140.125.176
           username: test
           password: qwer1234
           port: 119
           script: |
             docker pull ayoungg/back:latest || true
-            docker rm -f back 2>/dev/null || true
-            docker run -d --name back -p 8080:8080 --pull=always ayoungg/back:latest
+            CUR_PORT=`cat /etc/nginx/sites-enabled/default |  grep -oE '8080|8081'`
+            if [ "$CUR_PORT" = "8080" ]; then
+              OLD_PORT=8080
+              NEW_PORT=8081
+            else
+              OLD_PORT=8081
+              NEW_PORT=8080
+            fi
+            
+            echo $OLD_PORT
+            echo $NEW_PORT
+            
+            docker run -d --name back-$NEW_PORT -p $NEW_PORT:8080 --pull=always ayoungg/back:latest
 
+            for i in $(seq 1 36); do
+              if RESP="$(curl -fsS --max-time 3 "http://127.0.0.1:${NEW_PORT}/health" || true)"; then
+                echo "Health response: ${RESP}"
+                  if echo "$RESP" | grep -qi 'ok'; then
+                    echo "New container is healthy (curl ok)."
+                      break
+                  fi
+                fi
+                sleep 5
+            done
+
+            sed -i "s/$OLD_PORT/$NEW_PORT/g" /etc/nginx/sites-enabled/default
+            nginx -s reload
+
+            docker rm -f back-$OLD_PORT 2>/dev/null || true
 
