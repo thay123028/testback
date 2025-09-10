@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestBackController {
 
     public ResponseEntity test() {
-        return ResponseEntity.status(200).body("안농");
+        return ResponseEntity.status(200).body("하이");
     }
 }
