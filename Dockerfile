@@ -3,7 +3,7 @@ FROM openjdk:17-jdk-slim
 # RUN = 컨테이너에서 실행할 명령어, 컨테이너를 준비하기 위한 명령어
 # RUN apt update
 # RUN apt intall net-tools
-COPY ./build/libs/demo30-0.0.1-SNAPSHOT.jar  /app.jar
+COPY ./build/libs/testback-0.0.1-SNAPSHOT.jar  /app.jar
 # ADD = COPY + 추가 기능(압축 해제, URL)
 # ADD
 # docker run -dit my_image bash 처럼 특정 이미지에서 마지막에 명령어를
